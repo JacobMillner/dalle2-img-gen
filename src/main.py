@@ -1,5 +1,6 @@
 import torch
-from dalle2_pytorch import DiffusionPriorNetwork, DiffusionPrior, DiffusionPriorTrainer, OpenAIClipAdapter
+from PIL import Image
+from dalle2_pytorch import DALLE2, DiffusionPriorNetwork, DiffusionPrior, DiffusionPriorTrainer, OpenAIClipAdapter
 
 
 def load_diffusion_model(dprior_path, device, clip_choice):
@@ -42,3 +43,29 @@ def load_diffusion_model(dprior_path, device, clip_choice):
     diffusion_prior.scaler.load_state_dict(loaded_obj['scaler'])
 
     return diffusion_prior
+
+
+def main():
+
+    diffusion_prior = load_diffusion_model(
+        "models/chkpt_step_10000.pth", 0, "ViT-L/14")
+
+    dalle2 = DALLE2(
+        prior=diffusion_prior,
+        decoder=decoder
+    )
+
+    images = dalle2(
+        ['cute puppy chasing after a squirrel'],
+        # classifier free guidance strength (> 1 would strengthen the condition)
+        cond_scale=2.
+    )
+
+    count = 0
+    for image in images:
+        im = Image.fromarray(image)
+        im.save("output" + str(1) + ".jpeg")
+        count = count + 1
+
+
+main()
