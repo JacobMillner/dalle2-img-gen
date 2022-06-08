@@ -13,23 +13,31 @@ def load_diffusion_model(dprior_path, device, clip_choice):
         dim = 768
 
     prior_network = DiffusionPriorNetwork(
-        dim=dim,
-        depth=12,
+        dim=768,
+        depth=24,
         dim_head=64,
-        heads=12,
-        normformer=True
+        heads=32,
+        normformer=True,
+        attn_dropout=5e-2,
+        ff_dropout=5e-2,
+        num_time_embeds=1,
+        num_image_embeds=1,
+        num_text_embeds=1,
+        num_timesteps=1000,
+        ff_mult=4
     ).to(device)
 
     diffusion_prior = DiffusionPrior(
         net=prior_network,
-        clip=OpenAIClipAdapter(clip_choice),
-        image_embed_dim=dim,
+        clip=OpenAIClipAdapter("ViT-L/14"),
+        image_embed_dim=768,
         timesteps=1000,
         cond_drop_prob=0.1,
         loss_type="l2",
+        condition_on_text_encodings=True,
     ).to(device)
 
-    diffusion_prior.load_state_dict(loaded_obj["model"], strict=True)
+    diffusion_prior.load_state_dict(loaded_obj["model"], strict=False)
 
     diffusion_prior = DiffusionPriorTrainer(
         diffusion_prior=diffusion_prior,
@@ -39,8 +47,8 @@ def load_diffusion_model(dprior_path, device, clip_choice):
         amp=False,
     ).to(device)
 
-    diffusion_prior.optimizer.load_state_dict(loaded_obj['optimizer'])
-    diffusion_prior.scaler.load_state_dict(loaded_obj['scaler'])
+    # diffusion_prior.optimizer.load_state_dict(loaded_obj['optimizer'])
+    # diffusion_prior.scaler.load_state_dict(loaded_obj['scaler'])
 
     return diffusion_prior
 
